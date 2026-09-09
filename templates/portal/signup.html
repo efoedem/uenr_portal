@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Create Account | UENR Student Payment Portal{% endblock %}
+{% block body %}
+<div class="auth-wrap">
+  <div class="auth-side">
+    <img src="{% static 'img/login-bg.jpg' %}" alt="UENR campus" width="1024" height="1280">
+    <div class="quote">
+      <h2>Join the portal</h2>
+      <p>Register once with your index number and level, then pay your dues from anywhere.</p>
+    </div>
+  </div>
+  <div class="auth-main">
+    <div class="auth-inner">
+      <div class="auth-head">
+        <img src="{% static 'img/crest.png' %}" alt="UENR crest">
+        <h1>UENR</h1>
+        <p class="muted small" style="margin:2px 0 0">University of Energy and Natural Resources</p>
+      </div>
+      <div class="auth-card">
+        <h3>Create Account</h3>
+        <p class="sub">Register your student account</p>
+        {% if messages %}<ul class="messages">{% for m in messages %}<li>{{ m }}</li>{% endfor %}</ul>{% endif %}
+        <form method="post">
+          {% csrf_token %}
+          <label for="full_name">Full Name</label>
+          <input id="full_name" type="text" name="full_name" placeholder="e.g. Kwame Mensah" required>
+          <label for="student_id">Index Number</label>
+          <input id="student_id" type="text" name="student_id" placeholder="e.g. 202312345" required>
+          <label for="email">Email (used for password reset)</label>
+          <input id="email" type="email" name="email" placeholder="you@uenr.edu.gh" required>
+          <div class="grid-2">
+            <div>
+              <label for="programme">Programme</label>
+              <select id="programme" name="programme" required>
+                <option value="">Select programme</option>
+                {% for value, label in programmes %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+              </select>
+            </div>
+            <div>
+              <label for="level">Level</label>
+              <select id="level" name="level" required>
+                <option value="">Select level</option>
+                {% for value, label in levels %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+              </select>
+            </div>
+          </div>
+          <label for="phone">Phone Number</label>
+          <input id="phone" type="text" name="phone" placeholder="e.g. 0244000000">
+          <div class="grid-2">
+            <div>
+              <label for="password">Password</label>
+              <input id="password" type="password" name="password" placeholder="At least 6 characters" required>
+            </div>
+            <div>
+              <label for="confirm_password">Confirm Password</label>
+              <input id="confirm_password" type="password" name="confirm_password" required>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-block" type="submit">Create Account</button>
+        </form>
+        <p class="auth-foot">Already have an account? <a href="{% url 'login' %}">Login</a></p>
+      </div>
+      <p class="tagline">Knowledge for a Sustainable Future</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

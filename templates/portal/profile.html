@@ -1,0 +1,37 @@
+{% extends "portal/_shell.html" %}
+{% block title %}My Profile | UENR Student Payment Portal{% endblock %}
+{% block main %}
+<div class="card" style="max-width:620px">
+  <h2 style="margin:0">My Profile</h2>
+  <p class="muted">Index number {{ student.student_id }} · {{ student.level_label }}</p>
+  <form method="post">
+    {% csrf_token %}
+    <div class="grid-2">
+      <div><label for="first_name">First Name</label>
+        <input id="first_name" name="first_name" value="{{ request.user.first_name }}"></div>
+      <div><label for="last_name">Last Name</label>
+        <input id="last_name" name="last_name" value="{{ request.user.last_name }}"></div>
+    </div>
+    <label for="email">Email</label>
+    <input id="email" type="email" name="email" value="{{ request.user.email }}">
+    <div class="grid-2">
+      <div><label for="programme">Programme</label>
+        <select id="programme" name="programme">
+          {% for value, label in programmes %}
+            <option value="{{ value }}" {% if student.programme == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select></div>
+      <div><label for="level">Level</label>
+        <select id="level" name="level">
+          {% for value, label in levels %}
+            <option value="{{ value }}" {% if student.level == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select></div>
+    </div>
+    <label for="phone">Phone Number</label>
+    <input id="phone" name="phone" value="{{ student.phone }}">
+    <button class="btn btn-primary btn-block" type="submit">Save Changes</button>
+  </form>
+  <p class="auth-foot"><a href="{% url 'password_reset' %}">Change my password by email</a></p>
+</div>
+{% endblock %}

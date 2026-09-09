@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Payment Successful | UENR Student Payment Portal{% endblock %}
+{% block body %}
+<div class="auth-main" style="min-height:100vh">
+  <div class="auth-inner">
+    <div class="auth-card" style="text-align:center">
+      <div style="width:76px;height:76px;border-radius:50%;background:#e3f6ec;color:var(--green);
+                  display:flex;align-items:center;justify-content:center;font-size:38px;margin:0 auto 14px">✓</div>
+      <h3>Payment Successful!</h3>
+      <p class="muted">Your payment has been processed successfully.</p>
+      <div class="card" style="text-align:left;box-shadow:none;background:var(--bg)">
+        <div class="row-between"><span class="muted">Amount Paid</span><strong>GH₵ {{ payment.amount|floatformat:2 }}</strong></div>
+        <div class="row-between"><span class="muted">Transaction Ref</span><strong>{{ payment.reference }}</strong></div>
+        <div class="row-between"><span class="muted">Receipt No</span><strong>{{ payment.receipt_no }}</strong></div>
+        <div class="row-between"><span class="muted">Date</span><strong>{{ payment.created_at|date:"d M Y, g:i A" }}</strong></div>
+      </div>
+      <a class="btn btn-primary btn-block" href="{% url 'receipt' payment.reference %}">View / Print Receipt</a>
+      <a class="btn btn-outline-dark btn-block" href="{% url 'dashboard' %}">Back to Dashboard</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

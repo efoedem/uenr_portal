@@ -1,0 +1,64 @@
+{% extends "admin_portal/_base.html" %}
+{% block title %}Dues | UENR Admin{% endblock %}
+{% block heading %}Dues{% endblock %}
+{% block subheading %}Publish dues to a whole level at once{% endblock %}
+{% block main %}
+<div class="card">
+  <h4 style="margin-top:0">Publish a new due</h4>
+  <form method="post" class="filters">
+    {% csrf_token %}
+    <div style="flex:1"><label for="description">Description</label>
+      <input id="description" name="description" placeholder="e.g. Departmental Dues" required></div>
+    <div><label for="amount">Amount (GH₵)</label>
+      <input id="amount" name="amount" type="number" step="0.01" min="1" placeholder="300.00" required></div>
+    <div><label for="level">Level</label>
+      <select id="level" name="level" required>
+        <option value="">Select level</option>
+        {% for v, l in levels %}<option value="{{ v }}">{{ l }}</option>{% endfor %}
+      </select></div>
+    <div><label for="programme">Programme</label>
+      <select id="programme" name="programme">
+        <option value="">Both programmes</option>
+        {% for v, l in programmes %}<option value="{{ v }}">{{ l }}</option>{% endfor %}
+      </select></div>
+    <button class="btn btn-primary" type="submit">Publish to level</button>
+  </form>
+  <p class="muted small" style="margin:8px 0 0">
+    Students only see dues published for their level — new sign-ups get them automatically.</p>
+</div>
+
+<div class="card">
+  <h4 style="margin-top:0">Published dues</h4>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Description</th><th>Amount</th><th>Level</th><th>Programme</th>
+      <th>Students</th><th>Collected</th><th>Published</th><th></th></tr></thead>
+    <tbody>
+      {% for t in templates %}
+      <tr>
+        <td><strong>{{ t.description }}</strong></td>
+        <td>GH₵ {{ t.amount|floatformat:2 }}</td>
+        <td><span class="badge-level" style="margin:0">{{ t.level }}</span></td>
+        <td>{{ t.get_programme_display|default:"Both" }}</td>
+        <td>{{ t.assigned }}</td>
+        <td>GH₵ {{ t.collected|floatformat:2 }}</td>
+        <td class="muted small">{{ t.created_at|date:"d M Y" }}</td>
+        <td style="white-space:nowrap">
+          <a class="btn btn-sm btn-outline-dark" href="{% url 'admin_due_republish' t.pk %}">Re-apply</a>
+          <a class="btn btn-sm btn-danger" href="#"
+             onclick="event.preventDefault();if(confirm('Remove this due from all students?'))document.getElementById('d{{ t.pk }}').submit()">Delete</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="8" class="muted" style="text-align:center;padding:26px">
+        No dues published yet — students will see an empty dues list.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+
+{% for t in templates %}
+<form id="d{{ t.pk }}" method="post" action="{% url 'admin_due_delete' t.pk %}">{% csrf_token %}</form>
+{% endfor %}
+{% endblock %}

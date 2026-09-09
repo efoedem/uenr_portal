@@ -1,0 +1,52 @@
+{% extends "portal/_shell.html" %}
+{% block title %}Select Payment Method | UENR Student Payment Portal{% endblock %}
+{% block main %}
+<div class="card" style="max-width:640px">
+  <h2 style="margin:0">Select Payment Method</h2>
+  <p class="muted">Choose your preferred payment option.</p>
+
+  <div class="steps">
+    <div class="step"><b>1</b> Select Dues</div><div class="step-line"></div>
+    <div class="step on"><b>2</b> Payment Method</div><div class="step-line"></div>
+    <div class="step"><b>3</b> Confirm</div><div class="step-line"></div>
+    <div class="step"><b>4</b> Complete</div>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <label class="method on"><span class="tag" style="background:#ffcc00;color:#000">MTN</span>
+      <div><strong>MTN Mobile Money</strong><small>Pay with MTN MoMo</small></div>
+      <input type="radio" name="method" value="mtn" style="margin-left:auto;width:auto" checked></label>
+
+    <label class="method"><span class="tag" style="background:#e60000">VODA</span>
+      <div><strong>Vodafone Cash</strong><small>Pay with Vodafone Cash</small></div>
+      <input type="radio" name="method" value="vodafone" style="margin-left:auto;width:auto"></label>
+
+    <label class="method"><span class="tag" style="background:#1a3fa0">CARD</span>
+      <div><strong>Card Payment</strong><small>Visa / Mastercard</small></div>
+      <input type="radio" name="method" value="card" style="margin-left:auto;width:auto"></label>
+
+    <label class="method"><span class="tag" style="background:#0f7a4a">BANK</span>
+      <div><strong>Bank Transfer</strong><small>Direct bank transfer</small></div>
+      <input type="radio" name="method" value="bank" style="margin-left:auto;width:auto"></label>
+
+    <label for="phone">Phone number used for this payment</label>
+    <input id="phone" type="text" name="phone" value="{{ student.phone }}" placeholder="e.g. 0244000000">
+    <p class="muted small" style="margin:6px 0 0">This number is printed on your receipt.</p>
+
+    <div class="row-between" style="margin-top:20px">
+      <span class="muted">Amount to pay</span>
+      <strong style="font-size:24px;color:var(--blue)">GH₵ {{ total|floatformat:2 }}</strong>
+    </div>
+    <button class="btn btn-primary btn-block" type="submit">Confirm &amp; Pay →</button>
+    <p class="muted small" style="text-align:center;margin-top:10px">🔒 Simulated payment — no real money is moved.</p>
+  </form>
+</div>
+
+<script>
+  document.querySelectorAll('.method').forEach(m => m.addEventListener('click', () => {
+    document.querySelectorAll('.method').forEach(x => x.classList.remove('on'));
+    m.classList.add('on');
+  }));
+</script>
+{% endblock %}

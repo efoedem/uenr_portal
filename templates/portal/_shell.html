@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load static %}
+{% block body %}
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <img class="crest" src="{% static 'img/crest.png' %}" alt="UENR crest">
+      <div><h1>UENR</h1><span>Student Portal</span></div>
+    </div>
+    <a class="side-link {% if active == 'dashboard' %}on{% endif %}" href="{% url 'dashboard' %}">▦ Dashboard</a>
+    <a class="side-link {% if active == 'pay' %}on{% endif %}" href="{% url 'select_dues' %}">＋ Make Payment</a>
+    <a class="side-link {% if active == 'history' %}on{% endif %}" href="{% url 'payment_history' %}">◫ Payments &amp; Receipts</a>
+    <a class="side-link {% if active == 'profile' %}on{% endif %}" href="{% url 'profile' %}">◍ Profile</a>
+    {% if request.user.is_staff %}
+      <div class="side-sep">Staff</div>
+      <a class="side-link" href="{% url 'admin_dashboard' %}">⚙ Admin Dashboard</a>
+    {% endif %}
+    <div class="side-sep">Account</div>
+    <a class="side-link" href="{% url 'logout' %}">⇦ Logout</a>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <div></div>
+      <div class="user-chip">
+        <div class="avatar">{{ request.user.first_name|slice:":1" }}{{ request.user.last_name|slice:":1" }}</div>
+        <div>
+          <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>
+          <span class="badge-level">{{ student.level_label }}</span><br>
+          <span class="muted">{{ student.student_id }} · {{ student.programme_short }}</span>
+        </div>
+      </div>
+    </div>
+    {% if messages %}<ul class="messages">{% for m in messages %}<li>{{ m }}</li>{% endfor %}</ul>{% endif %}
+    {% block main %}{% endblock %}
+  </main>
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "portal/_shell.html" %}
+{% block title %}Payments & Receipts | UENR Student Payment Portal{% endblock %}
+{% block main %}
+<div class="card">
+  <h2 style="margin:0">Payments &amp; Receipts</h2>
+  <p class="muted">Every payment you have made on the portal.</p>
+  {% if payments %}
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Date &amp; Time</th><th>Receipt No</th><th>Transaction Ref</th><th>Method</th>
+      <th>Phone</th><th style="text-align:right">Amount</th><th></th></tr></thead>
+    <tbody>
+      {% for p in payments %}
+      <tr>
+        <td>{{ p.created_at|date:"d M Y, g:i A" }}</td>
+        <td>{{ p.receipt_no }}</td>
+        <td>{{ p.reference }}</td>
+        <td>{{ p.method_label }}</td>
+        <td>{{ p.phone_number|default:"—" }}</td>
+        <td style="text-align:right">GH₵ {{ p.amount|floatformat:2 }}</td>
+        <td style="text-align:right"><a class="btn btn-sm btn-outline-dark" href="{% url 'receipt' p.reference %}">Receipt</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+    <p class="muted" style="padding:30px 0;text-align:center">You have not made any payments yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends "portal/_shell.html" %}
+{% block title %}Dashboard | UENR Student Payment Portal{% endblock %}
+{% block main %}
+<h2 style="margin:0">Welcome back, {{ request.user.first_name|default:student.student_id }}! 👋</h2>
+<p class="muted">{{ student.programme_label }} · {{ student.level_label }} · {{ student.academic_year }}</p>
+
+<div class="stats">
+  <div class="stat blue"><span>Total Dues</span><strong>GH₵ {{ student.total_dues|floatformat:2 }}</strong></div>
+  <div class="stat green"><span>Amount Paid</span><strong>GH₵ {{ student.total_paid|floatformat:2 }}</strong></div>
+  <div class="stat red"><span>Outstanding</span><strong>GH₵ {{ student.outstanding|floatformat:2 }}</strong></div>
+  <div class="stat gold"><span>Payment Progress</span><strong>{{ student.progress }}%</strong>
+    <div class="bar" style="margin-top:8px"><i style="width:{{ student.progress }}%"></i></div></div>
+</div>
+
+<div class="two-col">
+  <div class="card">
+    <div class="row-between"><h4 style="margin:0">Your Dues</h4><a href="{% url 'select_dues' %}">Pay dues</a></div>
+    {% if dues %}
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Description</th><th>Amount</th><th>Paid</th><th>Balance</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for due in dues %}
+        <tr>
+          <td>{{ due.description }}</td>
+          <td>{{ due.amount|floatformat:2 }}</td>
+          <td>{{ due.paid|floatformat:2 }}</td>
+          <td>{{ due.balance|floatformat:2 }}</td>
+          <td><span class="pill {{ due.status|lower }}">{{ due.status }}</span></td>
+        </tr>
+        {% endfor %}
+        <tr class="total">
+          <td>Total</td><td>{{ student.total_dues|floatformat:2 }}</td>
+          <td>{{ student.total_paid|floatformat:2 }}</td>
+          <td>{{ student.outstanding|floatformat:2 }}</td><td></td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+    {% else %}
+      <p class="muted" style="padding:26px 0;text-align:center">
+        No dues have been published for {{ student.level_label }} yet.<br>
+        You will see them here as soon as the office uploads them.
+      </p>
+    {% endif %}
+  </div>
+
+  <div>
+    <div class="promo">
+      <h4>Complete Your Payment</h4>
+      <p>You have an outstanding balance of<br><strong style="font-size:22px">GH₵ {{ student.outstanding|floatformat:2 }}</strong></p>
+      <a class="btn btn-light btn-block" href="{% url 'select_dues' %}">Pay Now →</a>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">Quick Links</h4>
+      <p><a href="{% url 'payment_history' %}">◫ My receipts</a></p>
+      <p><a href="{% url 'profile' %}">✎ Update profile</a></p>
+      <p><a href="mailto:ict@uenr.edu.gh">✉ Contact support</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Login | UENR Student Payment Portal{% endblock %}
+{% block body %}
+<div class="auth-wrap">
+  <div class="auth-side">
+    <img src="{% static 'img/login-bg.jpg' %}" alt="UENR campus" width="1024" height="1280">
+    <div class="quote">
+      <h2>Knowledge for a<br>Sustainable Future</h2>
+      <p>Pay your dues, track your balance and keep every receipt in one place.</p>
+    </div>
+  </div>
+  <div class="auth-main">
+    <div class="auth-inner">
+      <div class="auth-head">
+        <img src="{% static 'img/crest.png' %}" alt="UENR crest">
+        <h1>UENR</h1>
+        <p class="muted small" style="margin:2px 0 0">University of Energy and Natural Resources</p>
+      </div>
+      <div class="auth-card">
+        <h3>Welcome Back</h3>
+        <p class="sub">Login to your student account</p>
+        <div class="tabs"><div class="on">Student Login</div><div>Staff Login</div></div>
+        {% if messages %}<ul class="messages">{% for m in messages %}<li>{{ m }}</li>{% endfor %}</ul>{% endif %}
+        <form method="post">
+          {% csrf_token %}
+          <label for="student_id">Index Number / Staff Username</label>
+          <input id="student_id" type="text" name="student_id" placeholder="e.g. 202312345" required>
+          <label for="password">Password</label>
+          <input id="password" type="password" name="password" placeholder="Enter your password" required>
+          <div class="row-between" style="margin-top:12px">
+            <label style="font-weight:400;margin:0"><input type="checkbox" name="remember" style="width:auto"> Remember me</label>
+            <a href="{% url 'password_reset' %}">Forgot password?</a>
+          </div>
+          <button class="btn btn-primary btn-block" type="submit">Login</button>
+        </form>
+        <p class="auth-foot">Don't have an account? <a href="{% url 'signup' %}">Create one</a></p>
+      </div>
+      <p class="tagline">Knowledge for a Sustainable Future</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% load static %}
+{% block body %}
+<nav class="nav">
+  <div class="brand">
+    <img class="crest" src="{% static 'img/crest.png' %}" alt="UENR crest">
+    <div><h1>UENR</h1><span>University of Energy and Natural Resources</span></div>
+  </div>
+  <div class="nav-links">
+    <a href="#top">Home</a><a href="#how">How it works</a><a href="#payments">Payments</a>
+    <a href="#support">Support</a>
+    <a class="btn btn-outline-dark" href="{% url 'login' %}">Login</a>
+    <a class="btn btn-primary" href="{% url 'signup' %}">Get Started</a>
+  </div>
+</nav>
+
+<section class="hero" id="top">
+  <div class="container hero-grid">
+    <div>
+      <p class="eyebrow">Secure. Simple. Convenient.</p>
+      <h2>Student Payment Portal</h2>
+      <p>Pay your departmental, SRC and other dues online anytime, anywhere. Get an official,
+         verifiable receipt the moment your payment goes through.</p>
+      <div class="hero-actions">
+        <a class="btn btn-gold" href="{% url 'signup' %}">Make a Payment →</a>
+        <a class="btn btn-outline" href="{% url 'login' %}">Student Login</a>
+      </div>
+    </div>
+    <div class="hero-photo">
+      <img src="{% static 'img/hero.jpg' %}" alt="UENR students on campus" width="1280" height="900">
+      <div class="hero-badge"><span>Payments processed</span><strong>24 / 7</strong></div>
+    </div>
+  </div>
+  <div class="container features" id="payments">
+    <div class="feature"><div class="dot">🛡</div><p>Secure Payments</p></div>
+    <div class="feature"><div class="dot">✓</div><p>Instant Verification</p></div>
+    <div class="feature"><div class="dot">◫</div><p>Official Receipts</p></div>
+    <div class="feature"><div class="dot">🕐</div><p>24/7 Access</p></div>
+  </div>
+</section>
+
+<section class="section" id="how">
+  <div class="container">
+    <h3>How it works</h3>
+    <p class="lead">Three steps from your phone to an official UENR receipt.</p>
+    <div class="steps-3">
+      <div class="step-card"><b>1</b><h4>Create your account</h4>
+        <p class="muted">Sign up with your index number, programme and level.</p></div>
+      <div class="step-card"><b>2</b><h4>Pay your dues</h4>
+        <p class="muted">Choose the dues published for your level and pay with Mobile Money, card or bank transfer.</p></div>
+      <div class="step-card"><b>3</b><h4>Download your receipt</h4>
+        <p class="muted">Every receipt carries a QR code and security code so it can be verified instantly.</p></div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer" id="support">
+  <div class="container row-between">
+    <div>
+      <strong style="color:#fff">University of Energy and Natural Resources</strong><br>
+      P.O. Box 214, Sunyani, Ghana · Tel: +233 3520 60000
+    </div>
+    <div>
+      <a href="{% url 'login' %}">Login</a> ·
+      <a href="{% url 'signup' %}">Create account</a> ·
+      <a href="https://www.uenr.edu.gh">uenr.edu.gh</a>
+    </div>
+  </div>
+</footer>
+{% endblock %}

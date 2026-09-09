@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Official Payment Receipt | UENR Student Payment Portal{% endblock %}
+{% block body %}
+<div class="receipt">
+  <img class="watermark" src="{% static 'img/crest.png' %}" alt="">
+  <div class="stamp">PAID</div>
+
+  <div class="receipt-head">
+    <div class="brand">
+      <img class="crest" style="width:58px;height:58px" src="{% static 'img/crest.png' %}" alt="UENR crest">
+      <div><h1>UENR</h1><span>University of Energy and Natural Resources</span></div>
+    </div>
+    <div class="muted small" style="text-align:right">
+      <span class="pill paid">✔ Verified Payment</span><br>
+      P.O. Box 214, Sunyani, Ghana<br>Tel: +233 3520 60000<br>www.uenr.edu.gh
+    </div>
+  </div>
+
+  <h3>OFFICIAL PAYMENT RECEIPT</h3>
+
+  <table>
+    <tr><td class="muted">Receipt No:</td><td><strong>{{ payment.receipt_no }}</strong></td>
+        <td class="muted">Transaction Ref:</td><td><strong>{{ payment.reference }}</strong></td></tr>
+    <tr><td class="muted">Date &amp; Time:</td><td>{{ payment.created_at|date:"d M Y, g:i A" }}</td>
+        <td class="muted">Payment Method:</td><td>{{ payment.method_label }}</td></tr>
+    <tr><td class="muted">Phone Number:</td><td>{{ payment.phone_number|default:"—" }}</td>
+        <td class="muted">Academic Year:</td><td>{{ student.academic_year }}</td></tr>
+  </table>
+
+  <h4>Student Information</h4>
+  <table>
+    <tr><td class="muted" style="width:130px">Name:</td><td>{{ student.full_name }}</td>
+        <td class="muted" style="width:110px">Index No:</td><td>{{ student.student_id }}</td></tr>
+    <tr><td class="muted">Level:</td><td><strong>{{ student.level_label }}</strong></td>
+        <td class="muted">Programme:</td><td>{{ student.programme_label }}</td></tr>
+  </table>
+
+  <h4>Payment Details</h4>
+  <table>
+    <thead><tr><th>Description</th><th style="text-align:right">Amount (GH₵)</th></tr></thead>
+    <tbody>
+      {% for item in payment.items.all %}
+        <tr><td>{{ item.due.description }}</td><td style="text-align:right">{{ item.amount|floatformat:2 }}</td></tr>
+      {% endfor %}
+      <tr class="total"><td>Total Paid</td><td style="text-align:right">GH₵ {{ payment.amount|floatformat:2 }}</td></tr>
+    </tbody>
+  </table>
+
+  <div class="security">
+    {% if qr %}<img src="{{ qr }}" alt="Receipt verification QR code">{% endif %}
+    <div>
+      <strong>Receipt authenticity</strong>
+      <p class="small muted" style="margin:4px 0">
+        Scan the QR code or visit <em>{{ verify_url }}</em> to confirm this receipt against
+        university records. Any receipt without a matching security code is not genuine.
+      </p>
+      <div class="sig-code">{{ payment.signature_pretty }}</div>
+    </div>
+  </div>
+
+  <p class="muted small" style="text-align:center;margin-top:14px">
+    This is a computer generated receipt and does not require a signature.</p>
+  <p style="text-align:center;margin:0"><strong style="color:var(--blue)">Thank you for your payment!</strong></p>
+
+  <div class="no-print" style="text-align:center;margin-top:20px">
+    <button class="btn btn-primary" onclick="window.print()">Print / Save as PDF</button>
+    <a class="btn btn-outline-dark" href="{% url 'dashboard' %}">Back to Dashboard</a>
+  </div>
+</div>
+{% endblock %}

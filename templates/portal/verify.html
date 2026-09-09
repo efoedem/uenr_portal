@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Verify Receipt | UENR Student Payment Portal{% endblock %}
+{% block body %}
+<div class="auth-main" style="min-height:100vh">
+  <div class="auth-inner">
+    <div class="auth-head">
+      <img src="{% static 'img/crest.png' %}" alt="UENR crest" style="width:64px">
+      <h1>Receipt Verification</h1>
+    </div>
+    <div class="auth-card" style="text-align:center">
+      {% if payment and genuine %}
+        <div style="font-size:40px">✅</div>
+        <h3 style="color:var(--green)">Genuine Receipt</h3>
+        <div class="card" style="text-align:left;box-shadow:none;background:var(--bg)">
+          <div class="row-between"><span class="muted">Receipt No</span><strong>{{ payment.receipt_no }}</strong></div>
+          <div class="row-between"><span class="muted">Transaction Ref</span><strong>{{ payment.reference }}</strong></div>
+          <div class="row-between"><span class="muted">Student</span><strong>{{ payment.student.full_name }}</strong></div>
+          <div class="row-between"><span class="muted">Index No</span><strong>{{ payment.student.student_id }}</strong></div>
+          <div class="row-between"><span class="muted">Level</span><strong>{{ payment.student.level_label }}</strong></div>
+          <div class="row-between"><span class="muted">Amount</span><strong>GH₵ {{ payment.amount|floatformat:2 }}</strong></div>
+          <div class="row-between"><span class="muted">Paid on</span><strong>{{ payment.created_at|date:"d M Y, g:i A" }}</strong></div>
+          <div class="row-between"><span class="muted">Security code</span><strong>{{ payment.signature_pretty }}</strong></div>
+        </div>
+      {% else %}
+        <div style="font-size:40px">⛔</div>
+        <h3 style="color:var(--red)">Not a valid receipt</h3>
+        <p class="muted">No genuine payment matches <strong>{{ code }}</strong> in university records.
+           Please report this receipt to the finance office.</p>
+      {% endif %}
+      <a class="btn btn-outline-dark btn-block" href="{% url 'landing' %}">Back to portal</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

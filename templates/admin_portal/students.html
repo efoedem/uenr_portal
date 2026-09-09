@@ -1,0 +1,92 @@
+{% extends "admin_portal/_base.html" %}
+{% block title %}Students | UENR Admin{% endblock %}
+{% block heading %}Students{% endblock %}
+{% block subheading %}{{ students|length }} student(s) shown{% endblock %}
+{% block main %}
+<div class="card">
+  <form method="get" class="filters">
+    <div><label for="level">Level</label>
+      <select id="level" name="level">
+        <option value="">All levels</option>
+        {% for v, l in levels %}<option value="{{ v }}" {% if f_level == v %}selected{% endif %}>{{ l }}</option>{% endfor %}
+      </select></div>
+    <div><label for="programme">Programme</label>
+      <select id="programme" name="programme">
+        <option value="">All programmes</option>
+        {% for v, l in programmes %}<option value="{{ v }}" {% if f_programme == v %}selected{% endif %}>{{ l }}</option>{% endfor %}
+      </select></div>
+    <div><label for="q">Search</label>
+      <input id="q" name="q" value="{{ q }}" placeholder="Name or index number"></div>
+    <button class="btn btn-primary" type="submit">Filter</button>
+    <a class="btn btn-outline-dark" href="{% url 'admin_students' %}">Reset</a>
+  </form>
+</div>
+
+<div class="card">
+  <div class="row-between" style="margin-bottom:12px">
+    <h4 style="margin:0">Upload students (Excel / CSV)</h4>
+    <a class="btn btn-sm btn-outline-dark" href="{% url 'admin_students_template' %}">↓ Download template</a>
+  </div>
+  <form method="post" action="{% url 'admin_students_upload' %}" enctype="multipart/form-data" class="filters">
+    {% csrf_token %}
+    <div style="flex:1"><label for="file">File with columns: Name, Index Number, Level, Programme, Email, Phone</label>
+      <input id="file" type="file" name="file" accept=".xlsx,.xls,.csv" required></div>
+    <button class="btn btn-primary" type="submit">Upload</button>
+  </form>
+  <p class="muted small" style="margin:8px 0 0">New accounts are created with the default password
+    <strong>{{ default_password }}</strong> — students can change it from “Forgot password”.</p>
+</div>
+
+<form method="post" action="{% url 'admin_students_export' %}">
+  {% csrf_token %}
+  <div class="card">
+    <div class="row-between" style="margin-bottom:10px">
+      <h4 style="margin:0">Student list</h4>
+      <div>
+        <button class="btn btn-sm btn-primary" type="submit">↓ Download selected (Excel)</button>
+        <a class="btn btn-sm btn-outline-dark"
+           href="{% url 'admin_students_export' %}?level={{ f_level }}&programme={{ f_programme }}&q={{ q }}">
+           ↓ Download all filtered</a>
+      </div>
+    </div>
+    <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th><input type="checkbox" id="all" style="width:auto"></th>
+        <th>Name</th><th>Index Number</th><th>Level</th><th>Programme</th>
+        <th>Email</th><th>Dues</th><th>Paid</th><th>Outstanding</th><th></th>
+      </tr></thead>
+      <tbody>
+        {% for s in students %}
+        <tr>
+          <td><input type="checkbox" class="pick" name="selected" value="{{ s.pk }}" style="width:auto"></td>
+          <td>{{ s.full_name }}</td>
+          <td>{{ s.student_id }}</td>
+          <td><span class="badge-level" style="margin:0">{{ s.level }}</span></td>
+          <td>{{ s.programme_label }}</td>
+          <td class="muted">{{ s.user.email|default:"—" }}</td>
+          <td>GH₵ {{ s.total_dues|floatformat:2 }}</td>
+          <td>GH₵ {{ s.total_paid|floatformat:2 }}</td>
+          <td>GH₵ {{ s.outstanding|floatformat:2 }}</td>
+          <td><a class="btn btn-sm btn-danger" href="#"
+                 onclick="event.preventDefault();document.getElementById('del{{ s.pk }}').submit()">Remove</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="10" class="muted" style="text-align:center;padding:26px">No students match this filter.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+</form>
+
+{% for s in students %}
+<form id="del{{ s.pk }}" method="post" action="{% url 'admin_student_delete' s.pk %}">{% csrf_token %}</form>
+{% endfor %}
+
+<script>
+  const all = document.getElementById('all');
+  all.addEventListener('change', () =>
+    document.querySelectorAll('.pick').forEach(c => c.checked = all.checked));
+</script>
+{% endblock %}

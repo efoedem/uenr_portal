@@ -1,0 +1,71 @@
+{% extends "admin_portal/_base.html" %}
+{% block title %}Admin Dashboard | UENR Student Payment Portal{% endblock %}
+{% block heading %}Payments Dashboard{% endblock %}
+{% block subheading %}Collections across all levels and programmes{% endblock %}
+{% block main %}
+<div class="stats">
+  <div class="stat green"><span>Total Collected</span><strong>GH₵ {{ total_collected|floatformat:2 }}</strong></div>
+  <div class="stat blue"><span>Expected (all dues)</span><strong>GH₵ {{ expected_all|floatformat:2 }}</strong></div>
+  <div class="stat red"><span>Outstanding</span><strong>GH₵ {{ outstanding_all|floatformat:2 }}</strong></div>
+  <div class="stat gold"><span>Collected Today</span><strong>GH₵ {{ today_total|floatformat:2 }}</strong></div>
+</div>
+<div class="stats">
+  <div class="stat"><span>Registered Students</span><strong>{{ student_count }}</strong></div>
+  <div class="stat"><span>Transactions</span><strong>{{ payment_count }}</strong></div>
+  {% for p in by_programme %}
+    <div class="stat blue"><span>{{ p.label }}</span><strong>GH₵ {{ p.collected|floatformat:2 }}</strong>
+      <span class="muted small">{{ p.students }} students · {{ p.payments }} payments</span></div>
+  {% endfor %}
+</div>
+
+<div class="two-col">
+  <div class="card">
+    <h4 style="margin-top:0">Collections by level</h4>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Level</th><th>Students</th><th>Payments</th><th>Expected</th><th>Collected</th>
+        <th>Outstanding</th><th style="width:150px">Progress</th></tr></thead>
+      <tbody>
+        {% for l in by_level %}
+        <tr>
+          <td><strong>{{ l.label }}</strong></td>
+          <td>{{ l.students }}</td>
+          <td>{{ l.payments }}</td>
+          <td>GH₵ {{ l.expected|floatformat:2 }}</td>
+          <td><strong>GH₵ {{ l.collected|floatformat:2 }}</strong></td>
+          <td>GH₵ {{ l.outstanding|floatformat:2 }}</td>
+          <td><div class="bar"><i style="width:{{ l.percent }}%"></i></div>
+              <span class="muted small">{{ l.percent }}%</span></td>
+        </tr>
+        {% endfor %}
+        <tr class="total">
+          <td>All levels</td><td>{{ student_count }}</td><td>{{ payment_count }}</td>
+          <td>GH₵ {{ expected_all|floatformat:2 }}</td>
+          <td>GH₵ {{ total_collected|floatformat:2 }}</td>
+          <td>GH₵ {{ outstanding_all|floatformat:2 }}</td><td></td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row-between"><h4 style="margin:0">Recent payments</h4>
+      <a href="{% url 'admin_payments' %}">View all</a></div>
+    <table>
+      <tbody>
+      {% for p in recent %}
+        <tr>
+          <td><strong>{{ p.student.full_name }}</strong><br>
+            <span class="muted small">{{ p.student.student_id }} · Level {{ p.student.level }}</span></td>
+          <td style="text-align:right">GH₵ {{ p.amount|floatformat:2 }}<br>
+            <span class="muted small">{{ p.created_at|date:"d M, g:i A" }}</span></td>
+        </tr>
+      {% empty %}
+        <tr><td class="muted">No payments yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

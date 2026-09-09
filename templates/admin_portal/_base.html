@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load static %}
+{% block body %}
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <img class="crest" src="{% static 'img/crest.png' %}" alt="UENR crest">
+      <div><h1>UENR</h1><span>Admin Console</span></div>
+    </div>
+    <a class="side-link {% if active == 'dashboard' %}on{% endif %}" href="{% url 'admin_dashboard' %}">▦ Dashboard</a>
+    <a class="side-link {% if active == 'students' %}on{% endif %}" href="{% url 'admin_students' %}">◉ Students</a>
+    <a class="side-link {% if active == 'dues' %}on{% endif %}" href="{% url 'admin_dues' %}">◈ Dues</a>
+    <a class="side-link {% if active == 'payments' %}on{% endif %}" href="{% url 'admin_payments' %}">◫ Payments</a>
+    <div class="side-sep">More</div>
+    <a class="side-link" href="/admin/">⚙ Django Admin</a>
+    <a class="side-link" href="{% url 'logout' %}">⇦ Logout</a>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <div><h2 style="margin:0">{% block heading %}{% endblock %}</h2>
+        <span class="muted">{% block subheading %}{% endblock %}</span></div>
+      <div class="user-chip">
+        <div class="avatar">{{ request.user.username|slice:":2"|upper }}</div>
+        <div><strong>{{ request.user.get_full_name|default:request.user.username }}</strong><br>
+          <span class="muted">Administrator</span></div>
+      </div>
+    </div>
+    {% if messages %}<ul class="messages">{% for m in messages %}<li>{{ m }}</li>{% endfor %}</ul>{% endif %}
+    {% block main %}{% endblock %}
+  </main>
+</div>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends "admin_portal/_base.html" %}
+{% block title %}Payments | UENR Admin{% endblock %}
+{% block heading %}Payments{% endblock %}
+{% block subheading %}{{ payments|length }} transaction(s) · GH₵ {{ total|floatformat:2 }} total{% endblock %}
+{% block main %}
+<div class="card">
+  <form method="get" class="filters">
+    <div><label for="level">Level</label>
+      <select id="level" name="level">
+        <option value="">All levels</option>
+        {% for v, l in levels %}<option value="{{ v }}" {% if f_level == v %}selected{% endif %}>{{ l }}</option>{% endfor %}
+      </select></div>
+    <div><label for="programme">Programme</label>
+      <select id="programme" name="programme">
+        <option value="">All programmes</option>
+        {% for v, l in programmes %}<option value="{{ v }}" {% if f_programme == v %}selected{% endif %}>{{ l }}</option>{% endfor %}
+      </select></div>
+    <div><label for="method">Method</label>
+      <select id="method" name="method">
+        <option value="">All methods</option>
+        {% for v, l in methods %}<option value="{{ v }}" {% if f_method == v %}selected{% endif %}>{{ l }}</option>{% endfor %}
+      </select></div>
+    <div><label for="q">Search</label>
+      <input id="q" name="q" value="{{ q }}" placeholder="Name, index, ref, phone"></div>
+    <button class="btn btn-primary" type="submit">Filter</button>
+    <a class="btn btn-outline-dark" href="{% url 'admin_payments' %}">Reset</a>
+    <a class="btn btn-gold" href="{% url 'admin_payments_export' %}?level={{ f_level }}&programme={{ f_programme }}&method={{ f_method }}&q={{ q }}">↓ Export Excel</a>
+  </form>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+  <table>
+    <thead><tr>
+      <th>Name</th><th>Index Number</th><th>Level</th><th>Programme</th><th>Transaction Ref</th>
+      <th>Receipt No</th><th>Phone</th><th>Method</th><th style="text-align:right">Amount</th>
+      <th>Date</th><th>Time</th><th></th>
+    </tr></thead>
+    <tbody>
+      {% for p in payments %}
+      <tr>
+        <td>{{ p.student.full_name }}</td>
+        <td>{{ p.student.student_id }}</td>
+        <td><span class="badge-level" style="margin:0">{{ p.student.level }}</span></td>
+        <td>{{ p.student.programme_short }}</td>
+        <td>{{ p.reference }}</td>
+        <td>{{ p.receipt_no }}</td>
+        <td>{{ p.phone_number|default:"—" }}</td>
+        <td>{{ p.method_label }}</td>
+        <td style="text-align:right"><strong>GH₵ {{ p.amount|floatformat:2 }}</strong></td>
+        <td>{{ p.created_at|date:"d M Y" }}</td>
+        <td>{{ p.created_at|date:"g:i A" }}</td>
+        <td><a class="btn btn-sm btn-outline-dark" href="{% url 'admin_receipt' p.reference %}">Receipt</a></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="12" class="muted" style="text-align:center;padding:26px">No payments match this filter.</td></tr>
+      {% endfor %}
+      <tr class="total"><td colspan="8">Total</td>
+        <td style="text-align:right">GH₵ {{ total|floatformat:2 }}</td><td colspan="3"></td></tr>
+    </tbody>
+  </table>
+  </div>
+</div>
+{% endblock %}
