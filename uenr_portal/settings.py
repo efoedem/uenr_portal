@@ -1,11 +1,3 @@
-"""
-Django settings for the uenr_portal project.
-
-Security-hardened configuration:
-- SECRET_KEY and DEBUG come from environment variables (see .env.example).
-- With DJANGO_DEBUG=0 (production), HSTS, SSL redirect and secure cookies activate.
-- Django password validators are enabled.
-"""
 import os
 from pathlib import Path
 
@@ -121,8 +113,41 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = True
     SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 
+# --- Logging (audit trail) --------------------------------------------------
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "standard": {"format": "{levelname} {asctime} {name} {message}", "style": "{"},
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "standard",
+        },
+        "audit_file": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": BASE_DIR / "audit.log",
+            "maxBytes": 5 * 1024 * 1024,
+            "backupCount": 5,
+            "formatter": "standard",
+        },
+    },
+    "loggers": {
+        "portal.audit": {
+            "handlers": ["audit_file", "console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.request": {
+            "handlers": ["console"],
+            "level": "ERROR",
+        },
+    },
+    "root": {"handlers": ["console"]},
+}
+
 # --- Email (password reset) -------------------------------------------------
-# With no EMAIL_HOST_USER configured, reset links print to the console (dev mode).
 EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
 EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
 EMAIL_USE_TLS = True
