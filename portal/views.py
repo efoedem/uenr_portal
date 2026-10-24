@@ -1,13 +1,66 @@
 from decimal import Decimal, InvalidOperation
+import logging
+import time
 
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.core.cache import cache
+from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .models import LEVELS, PAYMENT_METHODS, PROGRAMMES, Due, DueTemplate, Payment, PaymentItem, Student
 from .utils import qr_data_uri
+
+# --- Security logging ---------------------------------------------------------
+# Structured audit trail for security-relevant events. Configure the
+# "portal.audit" logger in settings.LOGGING to ship these to files/monitoring.
+audit_log = logging.getLogger("portal.audit")
+
+
+def _audit(request, event, **details):
+    """Record a security-relevant event with actor, IP and details."""
+    ip = request.META.get("REMOTE_ADDR", "")
+    actor = getattr(getattr(request, "user", None), "username", "") or "anonymous"
+    payload = " ".join(f"{k}={v}" for k, v in details.items())
+    audit_log.info("event=%s actor=%s ip=%s %s", event, actor, ip, payload)
+
+
+# --- Login rate limiting ------------------------------------------------------
+LOGIN_MAX_ATTEMPTS = 5
+LOGIN_WINDOW_SECONDS = 300  # 5 minutes
+LOGIN_LOCKOUT_SECONDS = 900  # 15 minutes
+
+
+def _client_ip(request):
+    return request.META.get("REMOTE_ADDR", "unknown")
+
+
+def _login_blocked(request, student_id):
+    """Return True if this client/IP+account is temporarily locked out."""
+    ip = _client_ip(request)
+    key = f"login-fail:{ip}:{student_id.lower()}"
+    data = cache.get(key)
+    return bool(data and data.get("count", 0) >= LOGIN_MAX_ATTEMPTS and
+                data.get("locked_until", 0) > time.time())
+
+
+def _record_login_failure(request, student_id):
+    ip = _client_ip(request)
+    key = f"login-fail:{ip}:{student_id.lower()}"
+    data = cache.get(key) or {"count": 0, "locked_until": 0}
+    data["count"] += 1
+    if data["count"] >= LOGIN_MAX_ATTEMPTS:
+        data["locked_until"] = time.time() + LOGIN_LOCKOUT_SECONDS
+        data["count"] = 0  # restart counting after the lockout expires
+    cache.set(key, data, LOGIN_WINDOW_SECONDS + LOGIN_LOCKOUT_SECONDS)
+    _audit(request, "login_failed", student_id=student_id,
+           attempts=data["count"])
+
+
+def _clear_login_failures(request, student_id):
+    cache.delete(f"login-fail:{_client_ip(request)}:{student_id.lower()}")
 
 
 def _student(request):
@@ -28,13 +81,23 @@ def login_view(request):
     if request.method == "POST":
         student_id = request.POST.get("student_id", "").strip()
         password = request.POST.get("password", "")
-        user = authenticate(request, username=student_id, password=password)
-        if user is not None:
-            login(request, user)
-            if user.is_staff:
-                return redirect("admin_dashboard")
-            return redirect("dashboard")
-        messages.error(request, "Invalid student ID or password.")
+        if student_id and _login_blocked(request, student_id):
+            messages.error(
+                request,
+                "Too many failed attempts. Try again in 15 minutes.",
+            )
+            _audit(request, "login_blocked", student_id=student_id)
+        else:
+            user = authenticate(request, username=student_id, password=password)
+            if user is not None:
+                _clear_login_failures(request, student_id)
+                login(request, user)
+                _audit(request, "login_success")
+                if user.is_staff:
+                    return redirect("admin_dashboard")
+                return redirect("dashboard")
+            _record_login_failure(request, student_id)
+            messages.error(request, "Invalid student ID or password.")
     return render(request, "portal/login.html")
 
 
@@ -88,6 +151,7 @@ def signup_view(request):
                     defaults={"description": template.description, "amount": template.amount},
                 )
             login(request, user)
+            _audit(request, "signup", student_id=student_id)
             messages.success(request, "Account created. Welcome to the portal!")
             return redirect("dashboard")
     return render(
@@ -98,6 +162,7 @@ def signup_view(request):
 
 
 def logout_view(request):
+    _audit(request, "logout")
     logout(request)
     return redirect("landing")
 
@@ -105,10 +170,11 @@ def logout_view(request):
 @login_required
 def dashboard(request):
     student = _student(request)
+    dues = student.dues.select_related("template")
     return render(
         request,
         "portal/dashboard.html",
-        {"student": student, "dues": student.dues.all(), "active": "dashboard"},
+        {"student": student, "dues": dues, "active": "dashboard"},
     )
 
 
@@ -195,45 +261,72 @@ def payment_method(request):
 
 @login_required
 def confirm_payment(request):
-    """Simulated payment processing: marks dues paid and creates a signed receipt."""
+    """Simulated payment processing: marks dues paid and creates a signed receipt.
+
+    Runs inside a single database transaction so a mid-loop failure cannot
+    leave dues marked paid without a matching payment record (or vice versa).
+    An idempotency guard prevents double-submits from creating duplicates.
+    """
     student = _student(request)
     selection = request.session.get("selection")
     method = request.session.get("method")
     if not selection or not method:
         return redirect("select_dues")
 
+    # Idempotency: if this session already completed this exact selection,
+    # redirect to the existing receipt instead of creating a duplicate.
+    last_ref = request.session.get("last_payment_ref")
+    if last_ref:
+        existing = Payment.objects.filter(
+            reference=last_ref, student=student,
+        ).first()
+        if existing:
+            request.session.pop("selection", None)
+            request.session.pop("method", None)
+            request.session.pop("phone", None)
+            return redirect("payment_success", reference=existing.reference)
+
     total = sum(Decimal(v) for v in selection.values())
-    reference = Payment.new_reference()
-    count = Payment.objects.count() + 1
-    payment = Payment.objects.create(
-        student=student,
-        reference=reference,
-        receipt_no=f"UENR/{student.academic_year.split('/')[0]}/{count:07d}",
-        method=method,
-        phone_number=request.session.get("phone", "") or student.phone,
-        amount=total,
-        level=student.level,
-        programme=student.programme,
-    )
-    payment.signature = payment.build_signature()
-    payment.save(update_fields=["signature"])
+    with transaction.atomic():
+        reference = Payment.new_reference()
+        count = Payment.objects.count() + 1
+        payment = Payment.objects.create(
+            student=student,
+            reference=reference,
+            receipt_no=f"UENR/{student.academic_year.split('/')[0]}/{count:07d}",
+            method=method,
+            phone_number=request.session.get("phone", "") or student.phone,
+            amount=total,
+            level=student.level,
+            programme=student.programme,
+        )
+        payment.signature = payment.build_signature()
+        payment.save(update_fields=["signature"])
 
-    for due_id, amount in selection.items():
-        due = Due.objects.get(pk=due_id, student=student)
-        value = Decimal(amount)
-        due.paid = due.paid + value
-        due.save()
-        PaymentItem.objects.create(payment=payment, due=due, amount=value)
+        for due_id, amount in selection.items():
+            # Lock the due row so concurrent submissions cannot overpay.
+            due = Due.objects.select_for_update().get(pk=due_id, student=student)
+            value = min(Decimal(amount), due.balance)
+            if value <= 0:
+                continue
+            due.paid = due.paid + value
+            due.save()
+            PaymentItem.objects.create(payment=payment, due=due, amount=value)
 
+    request.session["last_payment_ref"] = reference
     request.session.pop("selection", None)
     request.session.pop("method", None)
     request.session.pop("phone", None)
+    _audit(request, "payment_recorded", reference=reference, amount=str(total), method=method)
     return redirect("payment_success", reference=payment.reference)
 
 
 @login_required
 def payment_success(request, reference):
     payment = get_object_or_404(Payment, reference=reference, student__user=request.user)
+    # Clear the idempotency marker once the student has seen the receipt.
+    if request.session.get("last_payment_ref") == reference:
+        request.session.pop("last_payment_ref", None)
     return render(request, "portal/success.html", {"payment": payment})
 
 
@@ -265,6 +358,8 @@ def verify_receipt(request, code):
     genuine = bool(payment) and payment.is_authentic and (
         not supplied or supplied.upper() == payment.signature
     )
+    if payment and not genuine:
+        _audit(request, "receipt_verification_failed", receipt_no=receipt_no)
     return render(
         request,
         "portal/verify.html",
@@ -275,8 +370,9 @@ def verify_receipt(request, code):
 @login_required
 def payment_history(request):
     student = _student(request)
+    payments = student.payments.select_related("student", "student__user")
     return render(
         request,
         "portal/history.html",
-        {"student": student, "payments": student.payments.all(), "active": "history"},
+        {"student": student, "payments": payments, "active": "history"},
     )
